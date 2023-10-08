@@ -23,7 +23,7 @@ int main()
     }
     else
     {
-        cout << "Socket Created Successfully";
+        cout << "Socket Created Successfully\n";
     }
 
     // Bind the socket to a specific address and port
@@ -40,20 +40,39 @@ int main()
     }
     else
     {
-        cout << "\nSuccessfully bind to local port\n";
+        cout << "Successfully bind to local port\n";
     }
 
     if (listen(serverSocket, 1) < 0)
     {
-        cout << "Failed to start";
+        cout << "Failed to start\n";
     }
     else
     {
         cout << "Started listening to local port\n";
     }
 
-    // need to write accept function
+    while (true)
+    {
 
+        // accepting connection from the client
+        sockaddr_in clientAddress;
+        socklen_t clientAddrSize = sizeof(clientAddress);
+
+        // Accept a connection from the client
+        int clientSocket = accept(serverSocket, (struct sockaddr *)&clientAddress, &clientAddrSize);
+
+        if (clientSocket == -1)
+        {
+            cerr << "Error accepting connection";
+        }
+
+        cout << "Accepted connection from "
+             << inet_ntoa(clientAddress.sin_addr) // Convert client IP to string
+             << ":" << ntohs(clientAddress.sin_port) << "\n";
+
+        close(clientSocket);
+    }
     close(serverSocket);
     return 0;
 }

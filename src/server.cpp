@@ -5,6 +5,8 @@
 #include <arpa/inet.h>
 #include <netdb.h>
 
+#include <cstring>
+
 #define PORT 8080
 
 using namespace std;
@@ -61,6 +63,8 @@ int main()
             socklen_t clientAddrSize = sizeof(clientAddress);
             char hostName[NI_MAXHOST];    // Client's remote name
             char service[NI_MAXSERV]; // Service (i.e. port) the client is connect on
+            memset(hostName, 0, NI_MAXHOST); // same as memset(host, 0, NI_MAXHOST);
+            memset(service, 0, NI_MAXSERV);
 
             // Accept a connection from the client
             int clientSocket = accept(listening, (struct sockaddr *)&clientAddress, &clientAddrSize);
@@ -96,6 +100,7 @@ int main()
                   }
 
                   char recBuff[messageLen];
+                  memset(recBuff, 0, messageLen);
                   msg = recv(clientSocket, recBuff, messageLen, 0);
 
                   if (msg > 0)

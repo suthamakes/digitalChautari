@@ -18,12 +18,12 @@ int main()
 
     if (clientSocket == -1)
     {
-        cerr << "Error creating socket\n";
+        cerr << "[SYSTEM] Error creating socket\n";
         return -1;
     }
     else
     {
-        cout << "Socket Created Successfully\n";
+        cout << "[SYSTEM] Socket Created Successfully\n";
     }
 
     // Set up the address family
@@ -35,13 +35,13 @@ int main()
     // Connect to the server
     if (connect(clientSocket, (struct sockaddr *)&serverAddress, sizeof(serverAddress)) == -1)
     {
-        cerr << "Error connecting to the server\n";
+        cerr << "[SYSTEM] Error connecting to the server\n";
         close(clientSocket);
         return -1;
     }
     else
     {
-        cout << "Connected to the server at " << servIP << ":" << ntohs(serverAddress.sin_port) << "\n";
+        cout << "[SYSTEM] Connected to the server at " << servIP << ":" << ntohs(serverAddress.sin_port) << "\n";
     }
 
     close(clientSocket);

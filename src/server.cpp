@@ -45,7 +45,7 @@ int main()
 
       if (listen(listening, SOMAXCONN) < 0)
       {
-            cout << "[SYSTEM] Failed to start\n";
+            cerr << "[SYSTEM] Failed to start\n";
       }
       else
       {
@@ -54,7 +54,7 @@ int main()
 
       while (true)
       {
-
+            
             // accepting connection from the client
             sockaddr_in clientAddress;
             socklen_t clientAddrSize = sizeof(clientAddress);
@@ -66,6 +66,7 @@ int main()
             {
                   cerr << "[SYSTEM] Error accepting connection";
             }
+
 
             cout << "[SYSTEM] Accepted connection from "
                  << inet_ntoa(clientAddress.sin_addr) // Convert client IP to string
@@ -83,7 +84,7 @@ int main()
                   }
                   else if (msg == 0)
                   {
-                        cout << "[SYSTEM] Client disconnected\n";
+                        cerr << "[SYSTEM] Client disconnected\n";
                         break;
                   }
 

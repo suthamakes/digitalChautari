@@ -3,6 +3,7 @@
 #include <netinet/in.h>
 #include <unistd.h>
 #include <arpa/inet.h>
+#include <netdb.h>
 
 #define PORT 8080
 
@@ -54,10 +55,12 @@ int main()
 
       while (true)
       {
-            
+
             // accepting connection from the client
             sockaddr_in clientAddress;
             socklen_t clientAddrSize = sizeof(clientAddress);
+            char hostName[NI_MAXHOST];    // Client's remote name
+            char service[NI_MAXSERV]; // Service (i.e. port) the client is connect on
 
             // Accept a connection from the client
             int clientSocket = accept(listening, (struct sockaddr *)&clientAddress, &clientAddrSize);
@@ -67,11 +70,15 @@ int main()
                   cerr << "[SYSTEM] Error accepting connection";
             }
 
-
+            if (getnameinfo((sockaddr *)&clientAddress, clientAddrSize, hostName, NI_MAXHOST, service, NI_MAXSERV, 0) == 0)
+            {
+                  cout <<"[SYSTEM] "<< hostName << " connected on port " << service << endl;
+            }
+            else{
             cout << "[SYSTEM] Accepted connection from "
                  << inet_ntoa(clientAddress.sin_addr) // Convert client IP to string
                  << ":" << ntohs(clientAddress.sin_port) << "\n";
-
+            }
             while (true)
             {
                   size_t messageLen;

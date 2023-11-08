@@ -55,9 +55,6 @@ int main()
             cout << "[SYSTEM] Started listening to local port\n";
       }
 
-      while (true)
-      {
-
             // accepting connection from the client
             sockaddr_in clientAddress;
             socklen_t clientAddrSize = sizeof(clientAddress);
@@ -116,7 +113,7 @@ int main()
             }
 
             close(clientSocket);
-      }
+      
       close(listening);
       return 0;
 }

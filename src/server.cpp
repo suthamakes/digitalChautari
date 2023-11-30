@@ -4,7 +4,6 @@
 #include <unistd.h>
 #include <arpa/inet.h>
 #include <netdb.h>
-
 #include <cstring>
 
 #define PORT 8080
@@ -95,21 +94,18 @@ int main()
                         cerr << "[SYSTEM] Client disconnected\n";
                         break;
                   }
-
+else{
                   char recBuff[messageLen];
                   memset(recBuff, 0, messageLen);
                   msg = recv(clientSocket, recBuff, messageLen, 0);
 
-                  if (msg > 0)
-                  {
+                  
+                  
                         recBuff[msg] = '\0'; // Null-terminate the received data
                         cout << "Message received: " << recBuff << '\n';
+                        memset(recBuff, 0, messageLen);
                   }
-                  else
-                  {
-                        cerr << "[SYSTEM] Error receiving message data\n";
-                        break;
-                  }
+                  
             }
 
             close(clientSocket);

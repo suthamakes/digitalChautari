@@ -78,6 +78,30 @@ int acceptConnection(int listenSocket)
     return clientSocket;
 }
 
+// Function to find the maximum socket descriptor among the listening socket and connected client sockets
+int findMaxFd(int listenSocket, int *clientSockets, fd_set &readFds)
+{
+    int maxFd = listenSocket;
+
+    for (int i = 0; i < MAX_CLIENTS; ++i)
+    {
+        int client_socket = clientSockets[i];
+        if (client_socket > 0)
+        {
+            // Add each connected client socket to the read set
+            FD_SET(client_socket, &readFds);
+
+            // Update the maximum socket descriptor if needed
+            if (client_socket > maxFd)
+            {
+                maxFd = client_socket;
+            }
+        }
+    }
+
+    return maxFd;
+}
+
 void processClientData(int clientSocket, int *clientSockets)
 {
     // ... (your existing client data processing logic)
@@ -105,20 +129,8 @@ int main()
     {
         readFds = masterFds;
 
-        int maxFd = listenSocket;
-        for (int i = 0; i < MAX_CLIENTS; ++i)
-        {
-            int client_socket = client_sockets[i];
-            if (client_socket > 0)
-            {
-                FD_SET(client_socket, &readFds);
-                if (client_socket > maxFd)
-                {
-                    maxFd = client_socket;
-                }
-            }
-        }
-
+        int maxFd = findMaxFd(listenSocket, client_sockets, readFds);
+        
         // Use select to monitor file descriptors for readiness
         int readySock = select(maxFd + 1, &readFds, NULL, NULL, NULL);
 

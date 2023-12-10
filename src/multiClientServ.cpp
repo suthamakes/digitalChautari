@@ -10,6 +10,7 @@ using namespace std;
 
 constexpr int MAX_CLIENTS = 10;
 
+// Function to create a socket
 int createSocket()
 {
     int newSocket = socket(AF_INET, SOCK_STREAM, 0);
@@ -24,6 +25,7 @@ int createSocket()
     return newSocket;
 }
 
+// Function to bind the created socket to a specific IP address and port
 void bindSocket(int socket, const char *servIP, int port)
 {
     sockaddr_in server_address;
@@ -43,6 +45,7 @@ void bindSocket(int socket, const char *servIP, int port)
     }
 }
 
+// Function to set the socket to listen for incoming connections
 void startListening(int socket)
 {
     if (listen(socket, SOMAXCONN) < 0)
@@ -56,6 +59,7 @@ void startListening(int socket)
     }
 }
 
+// Function to accept a connection from a client
 int acceptConnection(int listenSocket)
 {
     sockaddr_in clientAddress;
@@ -81,16 +85,19 @@ void processClientData(int clientSocket, int *clientSockets)
 
 int main()
 {
-    fd_set masterFds, readFds;
-    const char *servIP = "127.0.0.1";
+    fd_set masterFds, readFds;        // File descriptor sets for monitoring sockets
+    const char *servIP = "127.0.0.1"; // Server IP address
     FD_ZERO(&masterFds);
 
+    // Create a listening socket and add it to the master set
     int listenSocket = createSocket();
     FD_SET(listenSocket, &masterFds);
 
+    // Bind the socket to a specific IP address and port, then start listening
     bindSocket(listenSocket, servIP, 8080);
     startListening(listenSocket);
 
+    // Array to store client socket descriptors
     int client_sockets[MAX_CLIENTS];
     memset(client_sockets, 0, sizeof(client_sockets));
 
@@ -112,6 +119,7 @@ int main()
             }
         }
 
+        // Use select to monitor file descriptors for readiness
         int readySock = select(maxFd + 1, &readFds, NULL, NULL, NULL);
 
         if (readySock == -1)
@@ -120,6 +128,7 @@ int main()
         }
         else
         {
+            // Check if the listening socket is ready for a new connection
             if (FD_ISSET(listenSocket, &readFds))
             {
 
@@ -135,6 +144,7 @@ int main()
                 }
             }
 
+            // Check each client socket for readiness
             for (int i = 0; i < MAX_CLIENTS; ++i)
             {
                 int client_socket = client_sockets[i];
@@ -178,8 +188,8 @@ int main()
         }
     }
 
+    // Close the listening socket and all client sockets on exit
     close(listenSocket);
-
     for (int i = 0; i < MAX_CLIENTS; ++i)
     {
         if (client_sockets[i] > 0)

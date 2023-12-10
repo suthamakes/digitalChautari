@@ -102,6 +102,81 @@ int findMaxFd(int listenSocket, int *clientSockets, fd_set &readFds)
     return maxFd;
 }
 
+// Function to handle client sockets
+void handleClientSockets(int listenSocket, int *clientSockets, fd_set &readFds)
+{
+    // Find the maximum socket descriptor
+    int maxFd = findMaxFd(listenSocket, clientSockets, readFds);
+
+    // Use select to monitor file descriptors for readiness
+    int readySock = select(maxFd + 1, &readFds, NULL, NULL, NULL);
+
+    if (readySock == -1)
+    {
+        cerr << "[SYSTEM] Error\n";
+    }
+    else
+    {
+        // Check if the listening socket is ready for a new connection
+        if (FD_ISSET(listenSocket, &readFds))
+        {
+
+            int client_socket = acceptConnection(listenSocket);
+
+            for (int i = 0; i < MAX_CLIENTS; ++i)
+            {
+                if (clientSockets[i] == 0)
+                {
+                    clientSockets[i] = client_socket;
+                    break;
+                }
+            }
+        }
+
+        // Check each client socket for readiness
+        for (int i = 0; i < MAX_CLIENTS; ++i)
+        {
+            int client_socket = clientSockets[i];
+            if (client_socket > 0 && FD_ISSET(client_socket, &readFds))
+            {
+                // Client socket is ready for reading
+
+                // First, receive the message length
+                size_t messageLen;
+                int lenBytesRead = recv(client_socket, &messageLen, sizeof(messageLen), 0);
+
+                if (lenBytesRead <= 0)
+                {
+                    // Handle disconnect or error
+                    close(client_socket);
+                    clientSockets[i] = 0;
+                    printf("[SYSTEM] Socket %d disconnected.\n", client_socket);
+                }
+                else
+                {
+                    // Now, receive the actual message based on the received length
+                    char buffer[1024];
+                    int bytesRead = recv(client_socket, buffer, messageLen, 0);
+
+                    if (bytesRead <= 0)
+                    {
+                        // Handle disconnect or error
+                        close(client_socket);
+                        clientSockets[i] = 0;
+                        printf("[SYSTEM] Socket %d disconnected.\n", client_socket);
+                    }
+                    else
+                    {
+                        // Process received data
+                        buffer[bytesRead] = '\0'; // Null-terminate the received data
+                        cout << "[SYSTEM] Received data from socket " << client_socket << ": " << buffer << endl;
+                    }
+                }
+            }
+        }
+    }
+}
+
 void processClientData(int clientSocket, int *clientSockets)
 {
     // ... (your existing client data processing logic)
@@ -129,75 +204,7 @@ int main()
     {
         readFds = masterFds;
 
-        int maxFd = findMaxFd(listenSocket, client_sockets, readFds);
-        
-        // Use select to monitor file descriptors for readiness
-        int readySock = select(maxFd + 1, &readFds, NULL, NULL, NULL);
-
-        if (readySock == -1)
-        {
-            cerr << "[SYSTEM] Error\n";
-        }
-        else
-        {
-            // Check if the listening socket is ready for a new connection
-            if (FD_ISSET(listenSocket, &readFds))
-            {
-
-                int client_socket = acceptConnection(listenSocket);
-
-                for (int i = 0; i < MAX_CLIENTS; ++i)
-                {
-                    if (client_sockets[i] == 0)
-                    {
-                        client_sockets[i] = client_socket;
-                        break;
-                    }
-                }
-            }
-
-            // Check each client socket for readiness
-            for (int i = 0; i < MAX_CLIENTS; ++i)
-            {
-                int client_socket = client_sockets[i];
-                if (client_socket > 0 && FD_ISSET(client_socket, &readFds))
-                {
-                    // Client socket is ready for reading
-
-                    // First, receive the message length
-                    size_t messageLen;
-                    int lenBytesRead = recv(client_socket, &messageLen, sizeof(messageLen), 0);
-
-                    if (lenBytesRead <= 0)
-                    {
-                        // Handle disconnect or error
-                        close(client_socket);
-                        client_sockets[i] = 0;
-                        printf("[SYSTEM] Socket %d disconnected.\n", client_socket);
-                    }
-                    else
-                    {
-                        // Now, receive the actual message based on the received length
-                        char buffer[1024];
-                        int bytesRead = recv(client_socket, buffer, messageLen, 0);
-
-                        if (bytesRead <= 0)
-                        {
-                            // Handle disconnect or error
-                            close(client_socket);
-                            client_sockets[i] = 0;
-                            printf("[SYSTEM] Socket %d disconnected.\n", client_socket);
-                        }
-                        else
-                        {
-                            // Process received data
-                            buffer[bytesRead] = '\0'; // Null-terminate the received data
-                            cout << "[SYSTEM] Received data from socket " << client_socket << ": " << buffer << endl;
-                        }
-                    }
-                }
-            }
-        }
+        handleClientSockets(listenSocket, client_sockets, readFds);
     }
 
     // Close the listening socket and all client sockets on exit

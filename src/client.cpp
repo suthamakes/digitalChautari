@@ -4,6 +4,7 @@
 #include <unistd.h>
 #include <arpa/inet.h>
 #include <cstring>
+#include <sys/select.h>
 
 #define servPORT 8080
 
@@ -47,33 +48,79 @@ int initializeSocket(const char *servIP)
 
 void sendMessageLoop(int clientSocket)
 {
+    fd_set readFds;
+    FD_ZERO(&readFds);
+    FD_SET(clientSocket, &readFds);
+    FD_SET(STDIN_FILENO, &readFds);
+
     while (true)
     {
-        char buff[400];
+        fd_set tmpReadFds = readFds;
+        int maxFd = max(clientSocket, STDIN_FILENO);
 
-        cout << "Enter your message: ";
-        cin.getline(buff, 400);
+        // Use select to monitor file descriptors for readiness
+        int readySock = select(maxFd + 1, &tmpReadFds, NULL, NULL, NULL);
 
-        size_t msgLen = strlen(buff);
-
-        int msg = send(clientSocket, &msgLen, sizeof(msgLen), 0);
-
-        if (msg == -1)
+        if (readySock == -1)
         {
-            cerr << "[SYSTEM] Error sending message\n";
-            exit(-1);
+            cerr << "[SYSTEM] Error in select\n";
+            break;
         }
-
-        msg = send(clientSocket, buff, msgLen, 0);
-
-        if (msg == -1)
+        else if (FD_ISSET(clientSocket, &tmpReadFds))
         {
-            cerr << "[SYSTEM] Error sending message data \n";
-            exit(-1);
+            // Data available from the server
+            size_t messageLen;
+            int lenBytesRead = recv(clientSocket, &messageLen, sizeof(messageLen), 0);
+
+            if (lenBytesRead <= 0)
+            {
+                cerr << "[SYSTEM] Server disconnected.\n";
+                break;
+            }
+            else
+            {
+                char buffer[1024];
+                int bytesRead = recv(clientSocket, buffer, messageLen, 0);
+
+                if (bytesRead <= 0)
+                {
+                    cerr << "[SYSTEM] Server disconnected.\n";
+                    break;
+                }
+                else
+                {
+                    buffer[bytesRead] = '\0';
+                    cout << "[SYSTEM] Received broadcast from server: " << buffer << endl;
+                }
+            }
         }
-        else
+        else if (FD_ISSET(STDIN_FILENO, &tmpReadFds))
         {
-            cout << "sent:  " << buff << '\n';
+            // User input available
+            char buff[400];
+            cin.getline(buff, 400);
+
+            size_t msgLen = strlen(buff);
+
+            int msg = send(clientSocket, &msgLen, sizeof(msgLen), 0);
+
+            if (msg == -1)
+            {
+                cerr << "[SYSTEM] Error sending message\n";
+                break;
+            }
+
+            msg = send(clientSocket, buff, msgLen, 0);
+
+            if (msg == -1)
+            {
+                cerr << "[SYSTEM] Error sending message data \n";
+                break;
+            }
+            else
+            {
+                cout << "[SYSTEM] Sent: " << buff << '\n';
+            }
         }
     }
 }

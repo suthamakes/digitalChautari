@@ -170,6 +170,17 @@ void handleClientSockets(int listenSocket, int *clientSockets, fd_set &readFds)
                         // Process received data
                         buffer[bytesRead] = '\0'; // Null-terminate the received data
                         cout << "[SYSTEM] Received data from socket " << client_socket << ": " << buffer << endl;
+
+                        for (int j = 0; j < MAX_CLIENTS; ++j)
+                        {
+                            int dest_socket = clientSockets[j];
+                            if (dest_socket > 0 && dest_socket != client_socket)
+                            {
+                                // Send the message to the destination client
+                                send(dest_socket, &messageLen, sizeof(messageLen), 0);
+                                send(dest_socket, buffer, messageLen, 0);
+                            }
+                        }
                     }
                 }
             }
